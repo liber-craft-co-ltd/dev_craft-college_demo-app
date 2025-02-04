@@ -84,3 +84,5 @@ def analytics_page(product_data, user_data):
         tooltip=["購入月", "購入数"]
     )
     st.altair_chart(trend_chart, use_container_width=True)
+    
+# 商品数はカテゴリによってことなるので、正規化する必要あるかも。。。
