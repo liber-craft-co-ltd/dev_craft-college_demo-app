@@ -85,4 +85,11 @@ def analytics_page(product_data, user_data):
     )
     st.altair_chart(trend_chart, use_container_width=True)
     
+        # 購入回数の多い商品
+    st.subheader("📈 購入回数が多い商品")
+    popular_products = product_data.merge(user_data.groupby('商品ID').size().reset_index(name='購入回数'), on='商品ID')
+    popular_products = popular_products.sort_values(by='購入回数', ascending=False)
+    st.dataframe(popular_products[["商品名", "購入回数", "価格"]].head(10))
+
+    
 # 商品数はカテゴリによってことなるので、正規化する必要あるかも。。。

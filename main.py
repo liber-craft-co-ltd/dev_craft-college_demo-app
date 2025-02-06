@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from modules.recommend import recommend_page
 from modules.analyze import analytics_page
+from modules.search import search_page
 
 # データ読み込み
 @st.cache_data
@@ -90,7 +91,7 @@ st.markdown("""
 
 # サイドバーでページ選択
 st.sidebar.title(f"🛒 {user_name} メニュー")
-page = st.sidebar.radio("ページを選択", ["レコメンド", "利用分析", "カテゴリ別人気商品"])
+page = st.sidebar.radio("ページを選択", ["レコメンド", "利用分析", "カテゴリ別人気商品", "過去購入商品検索"])
 
 # ページ表示
 if page == "レコメンド":
@@ -99,3 +100,5 @@ elif page == "利用分析":
     analytics_page(product_data, user_data)
 elif page == "カテゴリ別人気商品":
     category_popularity_ranking(product_data, user_data)
+elif page == "過去購入商品検索":
+    search_page(product_data, user_data, user_id)
