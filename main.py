@@ -16,45 +16,30 @@ def load_user_data(user_file):
 
 # ユーザー選択
 def select_user():
-    user_files = sorted(os.listdir("data/user_data"))
-    user_ids = [int(f.split("_")[1].split(".")[0]) for f in user_files if f.endswith('.csv')]  # .csvファイルだけを対象
+    # ファイルリストを取得
+    user_files = sorted([f for f in os.listdir("data/user_data") if f.endswith('.csv')])
+
+    # ファイル名から番号と苗字を抽出してリストを作成
+    user_labels = [f.replace('.csv', '') for f in user_files]  # 例: "1.山田"
+
+    # 数字順に並べ替え
+    user_labels.sort(key=lambda x: int(x.split('.')[0]))  # 「1.山田」のように数字を基準にソート
     
     # 「全体」の選択肢を追加
-    user_ids.append('全体')
-    selected_user_id = st.sidebar.selectbox("ユーザーを選択", user_ids)
-    
-    # 「全体」の場合、全ユーザーデータを結合して返す
-    if selected_user_id == '全体':
-        # ユーザーデータを全て結合する
-        user_data_all = pd.concat([load_user_data(f"data/user_data/user_{user_id}.csv") for user_id in user_ids[:-1]], ignore_index=True)
+    user_labels.insert(0, '全体')  # '全体'をリストの一番上に挿入
+
+    # ユーザーを選択
+    selected_user_label = st.sidebar.selectbox("ユーザーを選択", user_labels)
+
+    if selected_user_label == '全体':
+        # 全ユーザーデータを結合して返す
+        user_data_all = pd.concat([load_user_data(f"data/user_data/{f}") for f in user_files], ignore_index=True)
         return user_data_all, '全体'
     else:
-        user_file = f"data/user_data/user_{selected_user_id}.csv"
-        return load_user_data(user_file), selected_user_id
+        # 選択されたユーザーファイルを読み込む
+        user_file = f"data/user_data/{selected_user_label}.csv"
+        return load_user_data(user_file), selected_user_label
 
-# カテゴリ別の人気商品ランキング
-def category_popularity_ranking(product_data, user_data):
-    st.subheader("📊 カテゴリごとの購入商品ランキング")
-    
-    # ユーザー全体のデータから購入回数を集計
-    category_ranking = user_data.merge(product_data, on="商品ID")
-    
-    # カテゴリごとに商品IDの購入回数をカウント
-    category_ranking = category_ranking.groupby(['カテゴリ', '商品ID']).size().reset_index(name="購入回数")
-    
-    # カテゴリ選択ボックス
-    selected_category = st.selectbox("カテゴリを選択", category_ranking['カテゴリ'].unique())
-    
-    # 選択されたカテゴリのデータをフィルタリング
-    category_data = category_ranking[category_ranking['カテゴリ'] == selected_category]
-    
-    # 人気順に並べ替え
-    category_data = category_data.sort_values(by="購入回数", ascending=False).head(10)
-    
-    # 商品名を結合して表示
-    category_data = category_data.merge(product_data[['商品ID', '商品名']], on='商品ID')
-    
-    st.dataframe(category_data[['商品名', '購入回数']])
 
 # アプリの設定
 product_data = load_product_data()
@@ -69,36 +54,118 @@ else:
 # サイドバーのカスタマイズ
 st.markdown("""
     <style>
-        /* サイドバーの背景色 */
-        .css-1d391kg {background-color: #ffffff; padding: 15px;}
-        /* サイドバータイトル */
-        .css-1d391kg h1 {font-family: 'Helvetica', sans-serif; color: #333; font-size: 24px; margin-top: 0;}
-        /* サイドバーサブタイトル */
-        .css-1d391kg h2 {font-family: 'Helvetica', sans-serif; color: #666; font-size: 18px;}
-        /* サイドバー選択ボックスのデザイン */
-        .stSelectbox {border-radius: 5px; border: 1px solid #ddd; padding: 10px;}
-        .stRadio {border-radius: 5px; border: 1px solid #ddd; padding: 10px;}
-        /* サイドバーのボタンデザイン */
-        .stButton {background-color: #007BFF; color: white; border-radius: 5px; font-weight: 500;}
-        
-        /* ラジオボタン選択された項目に色を付ける */
-        .stRadio label[data-baseweb="radio"] input:checked + div {
-            background-color: #007BFF; /* 選択時の背景色 */
-            color: white; /* 選択時の文字色 */
+        /* ベースデザイン */
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+        }
+
+        /* サイドバーのデザイン */
+        .css-1d391kg {
+            background-color: #ffffff;  /* ライトモード背景色 */
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .css-1d391kg h1, .css-1d391kg h2 {
+            font-family: 'Arial', sans-serif;
+            color: #ff7f50;  /* オレンジ色 */
+        }
+
+        .css-1d391kg select {
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #fff;
+            color: #333;
+        }
+
+        .stButton {
+            background-color: #ff7f50;  /* オレンジ */
+            color: white;
+            border-radius: 5px;
+            font-weight: 500;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+        }
+
+        .stButton:hover {
+            background-color: #ff4500;  /* ホバー時 */
+        }
+
+        /* ダークモード用のCSS */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #121212;  /* ダークモード背景色 */
+                color: #fff;
+            }
+
+            .css-1d391kg {
+                background-color: #2c2f36;  /* ダークモードサイドバー */
+            }
+
+            .css-1d391kg h1, .css-1d391kg h2 {
+                color: #ff7f50;  /* オレンジ色 */
+            }
+
+            .stButton {
+                background-color: #ff7f50;  /* オレンジ */
+                color: white;
+                border-radius: 5px;
+                font-weight: 500;
+                padding: 12px 20px;
+                font-size: 16px;
+                border: none;
+            }
+
+            .stButton:hover {
+                background-color: #ff4500;  /* ホバー時 */
+            }
+
+            .stSelectbox, .stRadio {
+                background-color: #333;
+                color: #fff;
+                border-radius: 5px;
+                padding: 10px;
+            }
+
+            .stDataFrame {
+                border-collapse: collapse;
+                width: 100%;
+                margin-top: 20px;
+            }
+
+            .stDataFrame th, .stDataFrame td {
+                padding: 12px;
+                text-align: left;
+                color: #fff;
+            }
+
+            .stDataFrame th {
+                background-color: #ff7f50;  /* ヘッダーにオレンジ色 */
+                font-weight: bold;
+            }
+
+            .stDataFrame tr:nth-child(even) {
+                background-color: #333;
+            }
+
+            .stDataFrame tr:nth-child(odd) {
+                background-color: #2a2a2a;
+            }
         }
     </style>
     """, unsafe_allow_html=True)
 
 # サイドバーでページ選択
-st.sidebar.title(f"🛒 {user_name} メニュー")
-page = st.sidebar.radio("ページを選択", ["レコメンド", "利用分析", "カテゴリ別人気商品", "過去購入商品検索"])
+st.sidebar.title(f"🛒  メニュー")
+page = st.sidebar.radio("ページを選択", ["個別レコメンド（全体では使用不可）", "利用分析", "過去購入商品検索"])
 
 # ページ表示
-if page == "レコメンド":
+if page == "個別レコメンド（全体では使用不可）":
     recommend_page(product_data, user_data, user_id)
 elif page == "利用分析":
     analytics_page(product_data, user_data)
-elif page == "カテゴリ別人気商品":
-    category_popularity_ranking(product_data, user_data)
 elif page == "過去購入商品検索":
     search_page(product_data, user_data, user_id)
