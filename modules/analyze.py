@@ -152,44 +152,74 @@ def analytics_page(product_data, user_data, similarity_data):
             クロスセルやアップセルの戦略を考える際に有効な情報となります。
         """)
 
+    # 商品購入トレンド予測
     elif selected_analysis == "商品購入トレンド予測":
         st.subheader("商品購入トレンド予測")
 
         # 月別購入数を使った時系列予測
         user_data["購入月"] = pd.to_datetime(user_data["購入日時"]).dt.to_period("M")
         monthly_data = user_data.groupby("購入月").size().reset_index(name="購入数")
-    
+
         # Period型をTimestamp型に変換
         last_period = monthly_data["購入月"].max().to_timestamp()
-    
+
         # ARIMAモデルの適用
         model = ARIMA(monthly_data["購入数"], order=(1, 1, 1))
         model_fit = model.fit()
         forecast = model_fit.forecast(steps=3)
-    
+
         # 予測結果の整形
         forecast_data = pd.DataFrame({
-            "購入月": pd.date_range(start=last_period, periods=4, freq="M")[1:].strftime('%Y-%m'),  # 月のみ表示 (例: 2025-03)
-            "予測購入数": forecast.astype(int)  # 整数に変換
+            "購入月": pd.date_range(start=last_period, periods=4, freq="M")[1:].strftime('%Y-%m'),  # 月のみ表示
+            "購入数": forecast.astype(int),  # 整数に変換
+            "データタイプ": "予測"
         })
-    
-        # 次の3ヶ月の購入数予測を表示
-        st.write("次の3ヶ月の購入数予測")
-        st.dataframe(forecast_data)
-    
+
+        # 過去データの整形
+        past_data = monthly_data.copy()
+        past_data["購入月"] = past_data["購入月"].dt.strftime('%Y-%m')  # 月のフォーマットを合わせる
+        past_data["データタイプ"] = "実績"
+
+        # 実績データと予測データを結合
+        combined_data = pd.concat([past_data, forecast_data], ignore_index=True)
+
+        # 過去と予測のすべてのデータをデータフレームとして表示
+        st.write("過去と予測のデータ")
+        st.dataframe(combined_data)
+
         # 購入トレンド予測に関する説明
         st.write("""
             これは、過去の月別購入数を元に予測された今後3ヶ月の購入数です。予測結果は、購買傾向や季節的要因、過去のデータに基づいており、実際の購買数はこれとは異なる場合があります。
-            今後の販売戦略や在庫管理に役立てることができます。
+            今後の販売戦略に役立てることができます。
         """)
 
-        # 予測購入数がゼロでない月だけをフィルタリング
-        filtered_data = forecast_data[forecast_data["予測購入数"] > 0]
-    
-        # 月別購入数の予測結果を視覚化
-        forecast_chart = alt.Chart(filtered_data).mark_line().encode(
-            x=alt.X("購入月:T", title="購入月", axis=alt.Axis(format="%Y-%m")),  # 月のみ表示
-            y="予測購入数",
-            tooltip=["購入月", "予測購入数"]
+        # 月別購入数の予測結果を視覚化（過去と予測を点線で接続）
+        forecast_chart = alt.Chart(combined_data).mark_line().encode(
+            x=alt.X("購入月:T", title="購入月", axis=alt.Axis(format="%Y-%m", labelAngle=90)),  # 月のみ表示
+            y=alt.Y("購入数:Q", title="購入数"),
+            color=alt.Color("データタイプ", legend=alt.Legend(title="データタイプ")),  # 実績と予測の色分け
+            strokeDash=alt.condition(
+                alt.datum.データタイプ == "予測",  # 予測データのみ点線にする
+                alt.value([5, 5]),
+                alt.value([1])
+            ),
+            tooltip=["購入月", "購入数", "データタイプ"]
         )
-        st.altair_chart(forecast_chart, use_container_width=True)
+
+        # 実績の最後の月と予測の最初の月を接続する補助線
+        last_actual = past_data.iloc[-1]
+        first_forecast = forecast_data.iloc[0]
+
+        connection_line = pd.DataFrame({
+            "購入月": [last_actual["購入月"], first_forecast["購入月"]],
+            "購入数": [last_actual["購入数"], first_forecast["購入数"]],
+            "データタイプ": ["予測", "予測"]  # 予測として表示
+        })
+
+        connection_chart = alt.Chart(connection_line).mark_line(strokeDash=[5, 5]).encode(
+            x=alt.X("購入月:T"),
+            y=alt.Y("購入数:Q")
+        )
+
+        # グラフの描画
+        st.altair_chart(forecast_chart + connection_chart, use_container_width=True)
