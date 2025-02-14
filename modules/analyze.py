@@ -152,10 +152,9 @@ def analytics_page(product_data, user_data, similarity_data):
             クロスセルやアップセルの戦略を考える際に有効な情報となります。
         """)
 
-    # 商品購入トレンド予測
     elif selected_analysis == "商品購入トレンド予測":
         st.subheader("商品購入トレンド予測")
-    
+
         # 月別購入数を使った時系列予測
         user_data["購入月"] = pd.to_datetime(user_data["購入日時"]).dt.to_period("M")
         monthly_data = user_data.groupby("購入月").size().reset_index(name="購入数")
@@ -183,13 +182,14 @@ def analytics_page(product_data, user_data, similarity_data):
             これは、過去の月別購入数を元に予測された今後3ヶ月の購入数です。予測結果は、購買傾向や季節的要因、過去のデータに基づいており、実際の購買数はこれとは異なる場合があります。
             今後の販売戦略や在庫管理に役立てることができます。
         """)
+
+        # 予測購入数がゼロでない月だけをフィルタリング
+        filtered_data = forecast_data[forecast_data["予測購入数"] > 0]
     
         # 月別購入数の予測結果を視覚化
-        forecast_chart = alt.Chart(forecast_data).mark_line().encode(
-            x="購入月:T",
+        forecast_chart = alt.Chart(filtered_data).mark_line().encode(
+            x=alt.X("購入月:T", title="購入月", axis=alt.Axis(format="%Y-%m")),  # 月のみ表示
             y="予測購入数",
             tooltip=["購入月", "予測購入数"]
         )
         st.altair_chart(forecast_chart, use_container_width=True)
-
-
