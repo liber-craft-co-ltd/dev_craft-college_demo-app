@@ -1,5 +1,9 @@
 streamlit
 requests
 pandas
+plotly
+seaborn
+statsmodels
+altair
 matplotlib
 scikit-learn
