@@ -8,7 +8,7 @@ from modules.search import search_page
 # データ読み込み
 @st.cache_data
 def load_product_data():
-    return pd.read_csv("data/product_data.csv")
+    return pd.read_csv("product_data/product_data.csv")
 
 @st.cache_data
 def load_user_data(user_file):
@@ -16,21 +16,21 @@ def load_user_data(user_file):
 
 @st.cache_data
 def load_similarity_data():
-    return pd.read_csv("data/product_similarity_adjusted.csv")
+    return pd.read_csv("product_data/product_similarity.csv")
 
 # ユーザー選択
 def select_user():
     # ファイルリストを取得
-    user_files = sorted([f for f in os.listdir("data/user_data") if f.endswith('.csv')])
+    user_files = sorted([f for f in os.listdir("user_data/") if f.endswith('.csv')])
     user_labels = [f.replace('.csv', '') for f in user_files]
     user_labels.sort(key=lambda x: int(x.split('.')[0]))
     user_labels.insert(0, '全体')
     selected_user_label = st.sidebar.selectbox("ユーザーを選択", user_labels)
     if selected_user_label == '全体':
-        user_data_all = pd.concat([load_user_data(f"data/user_data/{f}") for f in user_files], ignore_index=True)
+        user_data_all = pd.concat([load_user_data(f"user_data/{f}") for f in user_files], ignore_index=True)
         return user_data_all, '全体'
     else:
-        user_file = f"data/user_data/{selected_user_label}.csv"
+        user_file = f"user_data/{selected_user_label}.csv"
         return load_user_data(user_file), selected_user_label
 
 # アプリの設定

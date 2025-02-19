@@ -3,9 +3,9 @@ import pandas as pd
 import streamlit as st
 import os
 
-# 商品類似度の読み込み
+# 商品類似度の読み込み recommend_based_on_similarityで使用
 def load_product_similarity():
-    return pd.read_csv("data/product_similarity_adjusted.csv")
+    return pd.read_csv("product_data/product_similarity.csv")
 
 # 購入履歴に基づいて関連商品をおすすめ
 def recommend_based_on_similarity(user_data, product_data, user_id, top_n=10):
