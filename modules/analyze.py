@@ -166,7 +166,7 @@ def analytics_page(product_data, similarity_data):
         st.write("""この表は選択した商品に関連性の高い商品を示しています。関連度の高い商品は、顧客が一緒に購入する可能性が高い商品群を示しています。
         クロスセルやアップセルの戦略を考える際に有効な情報となります。
         """)
-
+        
     # 商品購入トレンド予測
     elif selected_analysis == "商品購入トレンド予測":
         st.subheader("商品購入トレンド予測")
@@ -198,36 +198,40 @@ def analytics_page(product_data, similarity_data):
         # 実績データと予測データを結合
         combined_data = pd.concat([past_data, forecast_data], ignore_index=True)
 
-        # 過去と予測のすべてのデータをデータフレームとして表示
-        st.write("過去と予測のデータ")
-        st.dataframe(combined_data)
-
-        # 購入トレンド予測に関する説明
-        st.write("""これは、過去の月別購入数を元に予測された今後3ヶ月の購入数です。予測結果は、購買傾向や季節的要因、過去のデータに基づいており、実際の購買数はこれとは異なる場合があります。
-        今後の販売戦略に役立てることができます。
-        """)
-
-        # 月別購入数の予測結果を視覚化（過去と予測を点線で接続）
-        forecast_chart = alt.Chart(combined_data).mark_line().encode(
+        # 実績データと予測データを描画
+        actual_chart = alt.Chart(combined_data[combined_data["データタイプ"] == "実績"]).mark_line().encode(
             x=alt.X("購入月:T", title="購入月", axis=alt.Axis(format="%Y-%m", labelAngle=90)),  # 月のみ表示
             y=alt.Y("購入数:Q", title="購入数"),
-            color=alt.Color("データタイプ", legend=alt.Legend(title="データタイプ")),
+            color=alt.value("blue"),  # 実績データの色
             tooltip=["購入月", "購入数"]
         )
-        st.altair_chart(forecast_chart, use_container_width=True)
 
-# 主な実行部分
-if __name__ == "__main__":
-    st.sidebar.title("メニュー")
-    page_options = ["ホーム", "分析"]
-    selected_page = st.sidebar.radio("ページを選択", page_options)
+        predicted_chart = alt.Chart(combined_data[combined_data["データタイプ"] == "予測"]).mark_line(strokeDash=[5, 5]).encode(
+            x=alt.X("購入月:T", title="購入月", axis=alt.Axis(format="%Y-%m", labelAngle=90)),  # 月のみ表示
+            y=alt.Y("購入数:Q", title="購入数"),
+            color=alt.value("orange"),  # 予測データの色
+            tooltip=["購入月", "購入数"]
+        )
 
-    if selected_page == "ホーム":
-        st.title("商品レコメンドアプリ")
-        st.write("ここでは、商品の推薦や利用分析ができます。")
-    elif selected_page == "分析":
-        # 商品データと類似度データの読み込み
-        product_data = pd.read_csv("product_data.csv")
-        similarity_data = pd.read_csv("similarity_data.csv")
-        
-        analytics_page(product_data, similarity_data)
+        # 実績と予測のチャートを結合
+        final_chart = actual_chart + predicted_chart
+
+        # 実績データの最後のポイントと予測データの最初のポイントをつなぐための追加のポイントを作成
+        if not forecast_data.empty:
+            last_actual = past_data.iloc[-1]
+            next_forecast = forecast_data.iloc[0]
+            
+            connecting_data = pd.DataFrame({
+                "購入月": [last_actual["購入月"], next_forecast["購入月"]],
+                "購入数": [last_actual["購入数"], next_forecast["購入数"]],
+                "データタイプ": ["実績", "予測"]
+            })
+
+            connecting_chart = alt.Chart(connecting_data).mark_line(strokeDash=[5, 5], color="orange").encode(
+                x=alt.X("購入月:T"),
+                y=alt.Y("購入数:Q")
+            )
+
+            final_chart += connecting_chart
+
+        st.altair_chart(final_chart, use_container_width=True)
