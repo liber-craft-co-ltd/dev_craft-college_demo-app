@@ -5,9 +5,31 @@ import altair as alt
 import seaborn as sns
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
+import os
 
-def analytics_page(product_data, user_data, similarity_data):
+def load_user_data(file_path):
+    return pd.read_csv(file_path)
+
+def load_all_user_data():
+    user_files = sorted([f for f in os.listdir("user_data/") if f.endswith('.csv')])
+    user_data_frames = [load_user_data(f"user_data/{f}") for f in user_files]
+    return pd.concat(user_data_frames, ignore_index=True)
+
+def analytics_page(product_data, similarity_data):
     st.title("利用分析")
+
+    # ユーザー選択
+    user_files = sorted([f for f in os.listdir("user_data/") if f.endswith('.csv')])
+    user_labels = [f.replace('.csv', '') for f in user_files]
+    user_labels.sort(key=lambda x: int(x.split('.')[0]))
+    user_labels.insert(0, '全体')
+    selected_user_label = st.selectbox("ユーザーを選択", user_labels)
+
+    if selected_user_label == '全体':
+        user_data = load_all_user_data()  # 全ユーザーのデータを読み込む
+    else:
+        user_file = f"user_data/{selected_user_label}.csv"
+        user_data = load_user_data(user_file)
 
     analysis_options = [
         "カテゴリ別購入数",
@@ -16,14 +38,13 @@ def analytics_page(product_data, user_data, similarity_data):
         "月別購入数分析",
         "購入回数が多い商品",
         "関連度の高い商品",
-        "商品購入トレンド予測",  
+        "商品購入トレンド予測",
     ]
     
     selected_analysis = st.selectbox("分析項目を選択", analysis_options)
 
     # 購入した商品のデータを取得
     purchased_products = product_data[product_data["商品ID"].isin(user_data["商品ID"])]
-
 
     # カテゴリ別購入数
     if selected_analysis == "カテゴリ別購入数":
@@ -47,9 +68,8 @@ def analytics_page(product_data, user_data, similarity_data):
         st.altair_chart(category_chart, use_container_width=True)
 
         # 説明テキスト
-        st.write("""
-            このグラフは、各カテゴリごとの購入数を示しています。カテゴリごとに購入数がどのように分布しているかを視覚化しており、どのカテゴリがよく購入されているかを把握することができます。
-            購入数の多いカテゴリは、需要の高い商品群やトレンドを示唆している可能性があります。
+        st.write("""このグラフは、各カテゴリごとの購入数を示しています。カテゴリごとに購入数がどのように分布しているかを視覚化しており、どのカテゴリがよく購入されているかを把握することができます。
+        購入数の多いカテゴリは、需要の高い商品群やトレンドを示唆している可能性があります。
         """)
 
     # 購入金額の分布
@@ -68,9 +88,8 @@ def analytics_page(product_data, user_data, similarity_data):
         st.altair_chart(price_chart, use_container_width=True)
 
         # 説明テキスト
-        st.write("""
-            このグラフは購入金額の分布を示しています。購入金額がどの範囲で分布しているかを把握することができます。
-            平均購入金額や最大・最小金額をもとに、顧客の購買傾向を分析できます。
+        st.write("""このグラフは購入金額の分布を示しています。購入金額がどの範囲で分布しているかを把握することができます。
+        平均購入金額や最大・最小金額をもとに、顧客の購買傾向を分析できます。
         """)
 
     # 購入サイクル分析
@@ -96,9 +115,8 @@ def analytics_page(product_data, user_data, similarity_data):
         st.altair_chart(interval_chart, use_container_width=True)
 
         # 説明テキスト
-        st.write("""
-            このグラフは顧客の購入サイクル（購入間隔）を分析した結果です。顧客がどれくらいの間隔で商品を購入するかを視覚化しており、購買頻度を把握することができます。
-            平均購入間隔や中央値購入間隔は、顧客の購買行動を理解するために役立ちます。
+        st.write("""このグラフは顧客の購入サイクル（購入間隔）を分析した結果です。顧客がどれくらいの間隔で商品を購入するかを視覚化しており、購買頻度を把握することができます。
+        平均購入間隔や中央値購入間隔は、顧客の購買行動を理解するために役立ちます。
         """)
 
     # 月別購入数分析
@@ -115,9 +133,8 @@ def analytics_page(product_data, user_data, similarity_data):
         st.altair_chart(trend_chart, use_container_width=True)
 
         # 説明テキスト
-        st.write("""
-            このグラフは月別の購入数を示しています。各月における購入数の変動を把握することができ、シーズンごとのトレンドや需要の変化を確認できます。
-            売れ行きの強い月や低い月の傾向をもとに販売戦略を立てることができます。
+        st.write("""このグラフは月別の購入数を示しています。各月における購入数の変動を把握することができ、シーズンごとのトレンドや需要の変化を確認できます。
+        売れ行きの強い月や低い月の傾向をもとに販売戦略を立てることができます。
         """)
 
     # 購入回数が多い商品
@@ -131,9 +148,8 @@ def analytics_page(product_data, user_data, similarity_data):
         st.dataframe(popular_products[["商品名", "購入回数", "価格"]].reset_index(drop=True).head(10))
 
         # 説明テキスト
-        st.write("""
-            この表は購入回数が多い商品をリストアップしています。購入回数の多い商品は、人気のある商品やよく購入される商品群を示しています。
-            これらの商品をターゲットにしたマーケティング戦略やプロモーションを行うことで、売上向上に繋がる可能性があります。
+        st.write("""この表は購入回数が多い商品をリストアップしています。購入回数の多い商品は、人気のある商品やよく購入される商品群を示しています。
+        これらの商品をターゲットにしたマーケティング戦略やプロモーションを行うことで、売上向上に繋がる可能性があります。
         """)
 
     # 関連度の高い商品
@@ -147,9 +163,8 @@ def analytics_page(product_data, user_data, similarity_data):
         st.dataframe(related_products[["商品名2", "関連度"]].rename(columns={"商品名2": "商品名"}).reset_index(drop=True).head(10))
 
         # 説明テキスト
-        st.write("""
-            この表は選択した商品に関連性の高い商品を示しています。関連度の高い商品は、顧客が一緒に購入する可能性が高い商品群を示しています。
-            クロスセルやアップセルの戦略を考える際に有効な情報となります。
+        st.write("""この表は選択した商品に関連性の高い商品を示しています。関連度の高い商品は、顧客が一緒に購入する可能性が高い商品群を示しています。
+        クロスセルやアップセルの戦略を考える際に有効な情報となります。
         """)
 
     # 商品購入トレンド予測
@@ -188,38 +203,31 @@ def analytics_page(product_data, user_data, similarity_data):
         st.dataframe(combined_data)
 
         # 購入トレンド予測に関する説明
-        st.write("""
-            これは、過去の月別購入数を元に予測された今後3ヶ月の購入数です。予測結果は、購買傾向や季節的要因、過去のデータに基づいており、実際の購買数はこれとは異なる場合があります。
-            今後の販売戦略に役立てることができます。
+        st.write("""これは、過去の月別購入数を元に予測された今後3ヶ月の購入数です。予測結果は、購買傾向や季節的要因、過去のデータに基づいており、実際の購買数はこれとは異なる場合があります。
+        今後の販売戦略に役立てることができます。
         """)
 
         # 月別購入数の予測結果を視覚化（過去と予測を点線で接続）
         forecast_chart = alt.Chart(combined_data).mark_line().encode(
             x=alt.X("購入月:T", title="購入月", axis=alt.Axis(format="%Y-%m", labelAngle=90)),  # 月のみ表示
             y=alt.Y("購入数:Q", title="購入数"),
-            color=alt.Color("データタイプ", legend=alt.Legend(title="データタイプ")),  # 実績と予測の色分け
-            strokeDash=alt.condition(
-                alt.datum.データタイプ == "予測",  # 予測データのみ点線にする
-                alt.value([5, 5]),
-                alt.value([1])
-            ),
-            tooltip=["購入月", "購入数", "データタイプ"]
+            color=alt.Color("データタイプ", legend=alt.Legend(title="データタイプ")),
+            tooltip=["購入月", "購入数"]
         )
+        st.altair_chart(forecast_chart, use_container_width=True)
 
-        # 実績の最後の月と予測の最初の月を接続する補助線
-        last_actual = past_data.iloc[-1]
-        first_forecast = forecast_data.iloc[0]
+# 主な実行部分
+if __name__ == "__main__":
+    st.sidebar.title("メニュー")
+    page_options = ["ホーム", "分析"]
+    selected_page = st.sidebar.radio("ページを選択", page_options)
 
-        connection_line = pd.DataFrame({
-            "購入月": [last_actual["購入月"], first_forecast["購入月"]],
-            "購入数": [last_actual["購入数"], first_forecast["購入数"]],
-            "データタイプ": ["予測", "予測"]  # 予測として表示
-        })
-
-        connection_chart = alt.Chart(connection_line).mark_line(strokeDash=[5, 5]).encode(
-            x=alt.X("購入月:T"),
-            y=alt.Y("購入数:Q")
-        )
-
-        # グラフの描画
-        st.altair_chart(forecast_chart + connection_chart, use_container_width=True)
+    if selected_page == "ホーム":
+        st.title("商品レコメンドアプリ")
+        st.write("ここでは、商品の推薦や利用分析ができます。")
+    elif selected_page == "分析":
+        # 商品データと類似度データの読み込み
+        product_data = pd.read_csv("product_data.csv")
+        similarity_data = pd.read_csv("similarity_data.csv")
+        
+        analytics_page(product_data, similarity_data)
