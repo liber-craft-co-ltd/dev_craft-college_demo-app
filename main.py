@@ -1,51 +1,66 @@
 import streamlit as st
-import pandas as pd
-import os
-from modules.recommend import recommend_page
-from modules.analyze import analytics_page
-from modules.search import search_page
+import streamlit_constants as st_const
 
-# データ読み込み
-@st.cache_data
-def load_product_data():
-    return pd.read_csv("product_data/product_data.csv")
+def apply_page_style():
+    """ページスタイルとロゴを設定"""
+    st.set_page_config(
+        page_title="Craft College デモアプリ（無料相談会用）",
+        page_icon="./data/assets/craft-college_favicon.ico",
+        layout="wide"
+    )
+    st.logo(
+        "./data/assets/craft-college_logo.png",
+        size="large"
+    )
+    st.markdown(st_const.HIDE_ST_STYLE, unsafe_allow_html=True)
 
-@st.cache_data
-def load_similarity_data():
-    return pd.read_csv("product_data/product_similarity.csv")
 
-# アプリの設定
-product_data = load_product_data()
-similarity_data = load_similarity_data()
+def main():
+    """メイン関数"""
+    apply_page_style()
+    
+    # ページ定義
+    top_page = st.Page(
+        page="pages/0_top.py", 
+        title="TOP", 
+        icon="🏠",
+        default=True
+    )
+    analytics_page = st.Page(
+        page="pages/1_analytics.py", 
+        title="データ分析", 
+        icon="📊"
+    )
+    demand_forecast_page = st.Page(
+        page="pages/2_demand_forecast.py", 
+        title="需要予測", 
+        icon="📈"
+    )
+    recommendation_page = st.Page(
+        page="pages/3_recommendation.py", 
+        title="レコメンド", 
+        icon="📚"
+    )
+    ai_chatbot_page = st.Page(
+        page="pages/4_ai_chatbot.py", 
+        title="AIチャットボット", 
+        icon="🤖"
+    )
+    
+    # ナビゲーション設定
+    pg = st.navigation({
+        "メニュー": [
+            top_page,
+            analytics_page,
+            demand_forecast_page,
+            recommendation_page,
+            ai_chatbot_page
+        ]
+    })
+    
+    # ページ実行
+    pg.run()
 
-# アプリ名を表示
-st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Recommend & Analyze App</h1>", unsafe_allow_html=True)
-st.sidebar.markdown("<h1 style='text-align: center; color: #4CAF50;'>Recommend & Analyze App</h1>", unsafe_allow_html=True)
 
-# サイドバーでページ選択
-st.sidebar.title("🛒 メニュー")
-page = st.sidebar.radio("ページを選択", ["個別レコメンド", "利用分析", "商品検索"])
-
-# ページ表示
-if page == "個別レコメンド":
-    recommend_page(product_data)  
-elif page == "利用分析":
-    analytics_page(product_data, similarity_data)  
-elif page == "商品検索":
-    search_page(product_data)
-
-# カスタム CSS を適用
-st.markdown(
-    """
-    <style>
-    .sidebar .sidebar-content {
-        background-color: #f0f0f0;  /* サイドバーの背景色 */
-    }
-    .stButton > button {
-        background-color: #4CAF50;  /* ボタンの背景色 */
-        color: white;  /* ボタンのテキスト色 */
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+if __name__ == "__main__":
+    main() 
