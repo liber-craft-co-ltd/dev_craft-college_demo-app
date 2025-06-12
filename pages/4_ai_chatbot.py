@@ -67,7 +67,7 @@ def get_chat_response(client, messages):
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            max_tokens=500,
+            max_tokens=1000,
             temperature=0.1,
             stream=False
         )
