@@ -6,6 +6,10 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 
+# 日本語フォント設定
+plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial Unicode MS', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'sans-serif']
+plt.rcParams['axes.unicode_minus'] = False
+
 
 @st.cache_data
 def load_supermarket_data():
@@ -201,9 +205,6 @@ def create_scatter_with_regression(df, x_col, y_col):
 
 def create_beautiful_correlation_heatmap(df):
     """美しい相関ヒートマップを作成（seaborn使用）"""
-    # 日本語フォント設定
-    import japanize_matplotlib
-    
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     if len(numeric_cols) < 2:
         return None
@@ -215,8 +216,12 @@ def create_beautiful_correlation_heatmap(df):
     
     corr_matrix = clean_df.corr()
     
+    # 適度なサイズに固定（Streamlitに最適化）
+    fig_width = 8  # 幅を8インチに固定
+    fig_height = 6  # 高さを6インチに固定
+    
     # matplotlib figureを作成
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     
     # seabornでヒートマップを作成
     sns.heatmap(
@@ -228,17 +233,15 @@ def create_beautiful_correlation_heatmap(df):
         square=True,
         ax=ax,
         cbar_kws={'label': '相関係数'},
-        annot_kws={'size': 15, 'weight': 'bold'},
+        annot_kws={'size': 10, 'weight': 'bold'},  # フォントサイズを小さく
         linewidths=0.5,
         linecolor='white',
         vmin=-1,
         vmax=1
     )
     
-    ax.set_title('相関ヒートマップ', fontsize=18, pad=20, weight='bold')
-    
     # ラベルの回転とサイズ調整
-    plt.xticks(rotation=45, ha='right', fontsize=10)
+    plt.xticks(rotation=0, ha='right', fontsize=10)
     plt.yticks(rotation=0, fontsize=10)
     
     # レイアウト調整
@@ -314,7 +317,10 @@ def display_fixed_analysis(df):
     st.markdown("### 4. 📊 相関ヒートマップ")
     fig = create_beautiful_correlation_heatmap(df)
     if fig:
-        st.pyplot(fig, use_container_width=True)
+        # サイズを制御するためにカラムレイアウトを使用
+        col1, col2, col3 = st.columns([3, 1, 1])
+        with col1:
+            st.pyplot(fig, clear_figure=True)
         plt.close(fig)  # メモリリークを防ぐ
     else:
         st.info("相関ヒートマップを作成するには2つ以上の数値列が必要です。")
