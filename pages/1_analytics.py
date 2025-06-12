@@ -2,7 +2,6 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
-import seaborn as sns
 import numpy as np
 import pandas as pd
 
@@ -204,7 +203,7 @@ def create_scatter_with_regression(df, x_col, y_col):
 
 
 def create_beautiful_correlation_heatmap(df):
-    """美しい相関ヒートマップを作成（seaborn使用）"""
+    """美しい相関ヒートマップを作成（Plotly使用）"""
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     if len(numeric_cols) < 2:
         return None
@@ -216,36 +215,41 @@ def create_beautiful_correlation_heatmap(df):
     
     corr_matrix = clean_df.corr()
     
-    # 適度なサイズに固定（Streamlitに最適化）
-    fig_width = 8  # 幅を8インチに固定
-    fig_height = 6  # 高さを6インチに固定
+    # 相関係数の値をテキストとして表示するための配列を作成
+    text_values = []
+    for i in range(len(corr_matrix)):
+        row_text = []
+        for j in range(len(corr_matrix.columns)):
+            row_text.append(f'{corr_matrix.iloc[i, j]:.3f}')
+        text_values.append(row_text)
     
-    # matplotlib figureを作成
-    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-    
-    # seabornでヒートマップを作成
-    sns.heatmap(
-        corr_matrix,
-        annot=True,  # 相関係数を表示
-        fmt='.3f',   # 小数点以下3桁
-        cmap='Blues',  # 青色グラデーション
-        center=0,
-        square=True,
-        ax=ax,
-        cbar_kws={'label': '相関係数'},
-        annot_kws={'size': 10, 'weight': 'bold'},  # フォントサイズを小さく
-        linewidths=0.5,
-        linecolor='white',
-        vmin=-1,
-        vmax=1
+    # Plotlyでヒートマップを作成
+    fig = go.Figure(data=go.Heatmap(
+        z=corr_matrix.values,
+        x=corr_matrix.columns,
+        y=corr_matrix.index,
+        text=text_values,
+        texttemplate='%{text}',
+        textfont={'size': 18, 'color': 'white'},
+        colorscale='Blues',
+        zmid=0,
+        zmin=-1,
+        zmax=1,
+        showscale=True,
+        colorbar=dict(
+            title="相関係数",
+            tickmode="linear",
+            tick0=-1,
+            dtick=0.2
+        )
+    ))    
+    fig.update_layout(
+        width=600,
+        height=600,
+        xaxis={'side': 'bottom'},
+        yaxis={'autorange': 'reversed'},
+        template='plotly_white'
     )
-    
-    # ラベルの回転とサイズ調整
-    plt.xticks(rotation=0, ha='right', fontsize=10)
-    plt.yticks(rotation=0, fontsize=10)
-    
-    # レイアウト調整
-    plt.tight_layout()
     
     return fig
 
@@ -317,11 +321,7 @@ def display_fixed_analysis(df):
     st.markdown("### 4. 📊 相関ヒートマップ")
     fig = create_beautiful_correlation_heatmap(df)
     if fig:
-        # サイズを制御するためにカラムレイアウトを使用
-        col1, col2, col3 = st.columns([3, 1, 1])
-        with col1:
-            st.pyplot(fig, clear_figure=True)
-        plt.close(fig)  # メモリリークを防ぐ
+        st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("相関ヒートマップを作成するには2つ以上の数値列が必要です。")
 
