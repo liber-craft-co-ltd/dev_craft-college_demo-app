@@ -138,7 +138,7 @@ def get_usage_guide_content():
     
     1. **質問入力**: 下部の入力欄にご質問を入力してください
     2. **サンプル質問**: 質問例から選択できます
-    3. **履歴管理**: サイドバーからチャット履歴のクリアが可能です
+    3. **履歴管理**: 「🗑️ 履歴クリア」ボタンからチャット履歴のクリアが可能です
     
     ### 質問のコツ
     
@@ -210,6 +210,14 @@ def render_chat_settings():
     with st.expander("📖 使用方法"):
         st.markdown(get_usage_guide_content())
     
+    # チャット管理ボタン
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        if st.button("🗑️ 履歴クリア", help="チャット履歴をクリアします"):
+            st.session_state.messages = [st.session_state.messages[0]]  # 初期メッセージのみ残す
+            st.session_state.chat_history = []
+            st.rerun()
+    
     # サンプル質問
     st.subheader("💡 質問例")
     sample_questions = get_sample_questions()
@@ -221,15 +229,6 @@ def render_chat_settings():
     )
     
     return selected_question
-
-
-def render_sidebar():
-    """サイドバーを表示"""
-    st.sidebar.header("📋 チャット管理")
-    if st.sidebar.button("🗑️ 履歴クリア"):
-        st.session_state.messages = [st.session_state.messages[0]]  # 初期メッセージのみ残す
-        st.session_state.chat_history = []
-        st.rerun()
 
 
 def render_chat_area():
@@ -311,9 +310,6 @@ def main():
     
     # チャット設定
     selected_question = render_chat_settings()
-    
-    # サイドバー
-    render_sidebar()
     
     # チャットエリア
     render_chat_area()

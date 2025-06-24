@@ -1,6 +1,6 @@
 # 🎓 Craft College デモアプリ
 
-[Craft College 無料相談会用デモアプリケーション](https://dev-craft-college-demo-app.streamlit.app/)
+[Craft College 無料相談会用デモアプリケーション](https://craft-college-demo-app.streamlit.app/)
 
 ---
 
